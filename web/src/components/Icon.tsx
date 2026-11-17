@@ -22,6 +22,13 @@ const P: Record<string, ReactNode> = {
   coach: <path d="M12 3l2 6 6 2-6 2-2 6-2-6-6-2 6-2z" />,
   bell: <path d="M6 17v-6a6 6 0 0 1 12 0v6l2 2H4zM10 21h4" />,
   dati: <path d="M4 6c0-1.7 3.6-3 8-3s8 1.3 8 3v12c0 1.7-3.6 3-8 3s-8-1.3-8-3zM4 6c0 1.7 3.6 3 8 3s8-1.3 8-3M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3" />,
+  grip: <path d="M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01" />,
+  copy: <path d="M9 9h11v11H9zM5 15H4V4h11v1" />,
+  archive: <path d="M3 5h18v4H3zM5 9v10h14V9M10 13h4" />,
+  play: <path d="M7 5l12 7-12 7z" />,
+  link: <path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" />,
+  calendar: <path d="M4 6h16v14H4zM4 10h16M8 3v4M16 3v4" />,
+  alert: <path d="M12 4l9 16H3zM12 10v4M12 17h.01" />,
   // Attrezzi
   bilanciere: <path d="M2 12h20M5 8v8M8 6v12M19 8v8M16 6v12" />,
   manubri: <path d="M8 12h8M5 8.5v7M8 7v10M19 8.5v7M16 7v10" />,

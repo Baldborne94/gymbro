@@ -11,7 +11,7 @@ export interface TableDef {
 }
 
 /** Da incrementare quando si aggiungono tabelle o indici (versione IndexedDB). */
-export const LOCAL_DB_VERSION = 1;
+export const LOCAL_DB_VERSION = 2;
 
 export const TABLES = {
   exercises: {
@@ -30,6 +30,30 @@ export const TABLES = {
       custom: 'bool',
     },
     indexes: ['muscle', 'equipment'],
+  },
+  routines: {
+    cols: { name: 'text', notes: 'text', status: 'text', start_date: 'text', weeks: 'int', end_date: 'text' },
+    indexes: ['status'],
+  },
+  routine_days: {
+    cols: { routine_id: 'text', name: 'text', position: 'int', weekday: 'int' },
+    indexes: ['routine_id'],
+  },
+  routine_exercises: {
+    cols: {
+      routine_id: 'text',
+      day_id: 'text',
+      exercise_id: 'text',
+      position: 'int',
+      sets: 'int',
+      reps_min: 'int',
+      reps_max: 'int',
+      load: 'real',
+      rest_sec: 'int',
+      superset_next: 'bool',
+      notes: 'text',
+    },
+    indexes: ['routine_id', 'day_id'],
   },
 } satisfies Record<string, TableDef>;
 
@@ -112,8 +136,51 @@ export interface Exercise extends SyncRow {
   custom: boolean;
 }
 
+/** bozza: mai iniziata. attiva: quella in uso (una sola). archiviata: ciclo concluso. */
+export type RoutineStatus = 'bozza' | 'attiva' | 'archiviata';
+
+export interface Routine extends SyncRow {
+  name: string;
+  notes: string;
+  status: RoutineStatus;
+  /** Inizio del ciclo, AAAA-MM-GG. */
+  start_date: string | null;
+  /** Durata prevista del ciclo in settimane. */
+  weeks: number | null;
+  /** Data di archiviazione, AAAA-MM-GG. */
+  end_date: string | null;
+}
+
+export interface RoutineDay extends SyncRow {
+  routine_id: string;
+  name: string;
+  position: number;
+  /** Giorno della settimana previsto: 1 = lunedì … 7 = domenica. */
+  weekday: number | null;
+}
+
+export interface RoutineExercise extends SyncRow {
+  routine_id: string;
+  day_id: string;
+  exercise_id: string;
+  position: number;
+  sets: number;
+  /** Intervallo di ripetizioni; per gli esercizi a tempo sono secondi. */
+  reps_min: number;
+  reps_max: number;
+  /** Carico previsto (kg o tacche); per il corpo libero zavorra (+) o assistenza (−). */
+  load: number | null;
+  rest_sec: number;
+  /** In superset con l'esercizio che segue nel giorno. */
+  superset_next: boolean;
+  notes: string;
+}
+
 export interface RowTypes {
   exercises: Exercise;
+  routines: Routine;
+  routine_days: RoutineDay;
+  routine_exercises: RoutineExercise;
 }
 
 export type Changes = { [T in TableName]?: RowTypes[T][] };

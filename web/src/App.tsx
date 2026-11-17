@@ -8,6 +8,9 @@ import { ExerciseForm } from './pages/ExerciseForm';
 import { Home } from './pages/Home';
 import { Login } from './pages/Login';
 import { More } from './pages/More';
+import { RoutineDay } from './pages/RoutineDay';
+import { RoutineDetail } from './pages/RoutineDetail';
+import { Routines } from './pages/Routines';
 import { Soon } from './pages/Soon';
 
 export function App() {
@@ -23,7 +26,9 @@ export function App() {
       <main>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/schede" element={<Soon title="Schede" icon="schede" stage={2} text="Routine, giorni, superset e cicli di allenamento." />} />
+          <Route path="/schede" element={<Routines />} />
+          <Route path="/schede/:id" element={<RoutineDetail />} />
+          <Route path="/schede/:id/giorni/:dayId" element={<RoutineDay />} />
           <Route path="/allena" element={<Soon title="Allena" icon="allena" stage={3} text="Sessione di allenamento, timer di recupero e uso offline." />} />
           <Route path="/andamento" element={<Soon title="Andamento" icon="andamento" stage={4} text="Storico, progressi, record, calendario e bilanciamento." />} />
           <Route path="/altro" element={<More />} />

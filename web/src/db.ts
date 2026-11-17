@@ -49,6 +49,12 @@ export async function save<T extends TableName>(table: T, row: Draft<T>): Promis
   requestSync();
 }
 
+/** Modifica alcuni campi di una riga esistente. */
+export async function patch<T extends TableName>(table: T, id: string, changes: Partial<RowTypes[T]>): Promise<void> {
+  await (db[table] as Table<object, string>).update(id, { ...changes, updated_at: Date.now(), _dirty: 1 } as never);
+  requestSync();
+}
+
 /** Eliminazione morbida: la riga resta, marcata come eliminata, così si propaga. */
 export async function remove<T extends TableName>(table: T, id: string): Promise<void> {
   await (db[table] as Table<{ deleted: boolean; updated_at: number; _dirty: number }, string>).update(id, {
