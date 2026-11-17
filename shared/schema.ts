@@ -11,7 +11,7 @@ export interface TableDef {
 }
 
 /** Da incrementare quando si aggiungono tabelle o indici (versione IndexedDB). */
-export const LOCAL_DB_VERSION = 2;
+export const LOCAL_DB_VERSION = 3;
 
 export const TABLES = {
   exercises: {
@@ -54,6 +54,42 @@ export const TABLES = {
       notes: 'text',
     },
     indexes: ['routine_id', 'day_id'],
+  },
+  workouts: {
+    cols: { routine_id: 'text', day_id: 'text', name: 'text', date: 'text', started_at: 'int', finished_at: 'int', notes: 'text' },
+    indexes: ['date'],
+  },
+  workout_exercises: {
+    cols: {
+      workout_id: 'text',
+      exercise_id: 'text',
+      original_exercise_id: 'text',
+      position: 'int',
+      reps_min: 'int',
+      reps_max: 'int',
+      rest_sec: 'int',
+      superset_next: 'bool',
+      skipped: 'bool',
+      notes: 'text',
+    },
+    indexes: ['workout_id', 'exercise_id'],
+  },
+  sets: {
+    cols: {
+      workout_id: 'text',
+      workout_exercise_id: 'text',
+      exercise_id: 'text',
+      position: 'int',
+      kind: 'text',
+      load: 'real',
+      reps: 'int',
+      seconds: 'int',
+      rpe: 'real',
+      rir: 'int',
+      done: 'bool',
+      done_at: 'int',
+    },
+    indexes: ['workout_id', 'workout_exercise_id', 'exercise_id'],
   },
 } satisfies Record<string, TableDef>;
 
@@ -176,7 +212,64 @@ export interface RoutineExercise extends SyncRow {
   notes: string;
 }
 
+export interface Workout extends SyncRow {
+  routine_id: string | null;
+  day_id: string | null;
+  name: string;
+  /** Giorno della sessione, AAAA-MM-GG. */
+  date: string;
+  started_at: number;
+  /** Vuoto finché la sessione è in corso. */
+  finished_at: number | null;
+  notes: string;
+}
+
+export interface WorkoutExercise extends SyncRow {
+  workout_id: string;
+  exercise_id: string;
+  /** Esercizio previsto dalla scheda, se è stato sostituito per questa sessione. */
+  original_exercise_id: string | null;
+  position: number;
+  reps_min: number | null;
+  reps_max: number | null;
+  rest_sec: number;
+  superset_next: boolean;
+  skipped: boolean;
+  notes: string;
+}
+
+export type SetKind = 'normale' | 'riscaldamento' | 'drop' | 'cedimento';
+
+export const SET_KINDS: { id: SetKind; label: string; tag: string }[] = [
+  { id: 'normale', label: 'Normale', tag: '' },
+  { id: 'riscaldamento', label: 'Riscaldamento', tag: 'R' },
+  { id: 'drop', label: 'Drop set', tag: 'D' },
+  { id: 'cedimento', label: 'A cedimento', tag: 'C' },
+];
+
+export interface WorkoutSet extends SyncRow {
+  workout_id: string;
+  workout_exercise_id: string;
+  exercise_id: string;
+  position: number;
+  kind: SetKind;
+  /** kg o tacche; per il corpo libero zavorra (+) o assistenza (−). */
+  load: number | null;
+  reps: number | null;
+  /** Durata, per gli esercizi a tempo. */
+  seconds: number | null;
+  /** Sforzo percepito (6–10). */
+  rpe: number | null;
+  /** Ripetizioni di riserva. */
+  rir: number | null;
+  done: boolean;
+  done_at: number | null;
+}
+
 export interface RowTypes {
+  workouts: Workout;
+  workout_exercises: WorkoutExercise;
+  sets: WorkoutSet;
   exercises: Exercise;
   routines: Routine;
   routine_days: RoutineDay;
