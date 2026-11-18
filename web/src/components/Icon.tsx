@@ -29,6 +29,12 @@ const P: Record<string, ReactNode> = {
   link: <path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" />,
   calendar: <path d="M4 6h16v14H4zM4 10h16M8 3v4M16 3v4" />,
   alert: <path d="M12 4l9 16H3zM12 10v4M12 17h.01" />,
+  swap: <path d="M4 8h14l-3-3M20 16H6l3 3" />,
+  skip: <path d="M5 5l9 7-9 7zM18 5v14" />,
+  list: <path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01" />,
+  note: <path d="M5 4h14v12l-4 4H5zM15 20v-4h4M8 9h8M8 13h5" />,
+  timer: <><circle cx="12" cy="13" r="7.5" /><path d="M12 9v4l2.5 2M9.5 3h5" /></>,
+  flag: <path d="M5 21V4h13l-2.5 4.5L18 13H5" />,
   // Attrezzi
   bilanciere: <path d="M2 12h20M5 8v8M8 6v12M19 8v8M16 6v12" />,
   manubri: <path d="M8 12h8M5 8.5v7M8 7v10M19 8.5v7M16 7v10" />,

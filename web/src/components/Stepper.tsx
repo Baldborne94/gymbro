@@ -13,10 +13,12 @@ interface Props {
   nullable?: boolean;
   /** Formato di sola lettura (es. m:ss): disattiva la scrittura diretta. */
   format?: (value: number) => string;
+  /** Versione grande per la sessione: valore enorme, unità sotto. */
+  big?: boolean;
 }
 
 /** Riga con pulsanti −/+ grandi e valore modificabile anche da tastiera. */
-export function Stepper({ label, value, onChange, step = 1, min = 0, max = 9999, unit, nullable, format }: Props) {
+export function Stepper({ label, value, onChange, step = 1, min = 0, max = 9999, unit, nullable, format, big }: Props) {
   const show = (v: number | null) => (v === null ? '' : format ? format(v) : num(v));
   const [text, setText] = useState(show(value));
   useEffect(() => setText(show(value)), [value]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -35,7 +37,7 @@ export function Stepper({ label, value, onChange, step = 1, min = 0, max = 9999,
   };
 
   return (
-    <div className="stepper">
+    <div className={`stepper${big ? ' stepper-big' : ''}`} data-unit={unit}>
       <div className="stepper-label">
         {label}
         {unit && <span className="muted"> · {unit}</span>}
