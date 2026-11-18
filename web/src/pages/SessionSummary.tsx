@@ -5,6 +5,7 @@ import { Icon } from '../components/Icon';
 import { MuscleIcon } from '../components/MuscleIcon';
 import { formatDate, num } from '../dates';
 import { db, patch } from '../db';
+import { RECORD_LABEL, findRecords, recordValue, type RecordKind } from '../stats';
 import { formatDuration, formatSet, setVolume } from '../workout';
 
 /** Dati completi di una sessione conclusa, con i totali. */
@@ -18,7 +19,15 @@ export async function workoutDetail(id: string) {
     .sort((a, b) => a.position - b.position);
   const exercises = new Map((await db.exercises.bulkGet(wes.map((w) => w.exercise_id))).filter(Boolean).map((e) => [e!.id, e!]));
   const volume = sets.reduce((sum, s) => sum + setVolume(s, exercises.get(s.exercise_id)), 0);
-  return { workout, wes, sets, exercises, volume };
+  // Record personali ottenuti in questa sessione.
+  const records = new Map<string, RecordKind>();
+  for (const exerciseId of new Set(sets.map((s) => s.exercise_id))) {
+    const history = (await db.sets.where('exercise_id').equals(exerciseId).toArray()).filter((s) => !s.deleted && s.done);
+    for (const [setId, kind] of findRecords(history, exercises.get(exerciseId))) {
+      if (sets.some((s) => s.id === setId)) records.set(setId, kind);
+    }
+  }
+  return { workout, wes, sets, exercises, volume, records };
 }
 
 export function SessionSummary() {
@@ -26,7 +35,7 @@ export function SessionSummary() {
   const navigate = useNavigate();
   const data = useLiveQuery(() => workoutDetail(id), [id]);
   if (!data) return <div className="session" />;
-  const { workout, wes, sets, exercises, volume } = data;
+  const { workout, wes, sets, exercises, volume, records } = data;
   if (!workout || workout.deleted) {
     return <div className="session"><div className="empty"><p>Sessione non trovata.</p><button className="btn" onClick={() => navigate('/')}>Torna a Oggi</button></div></div>;
   }
@@ -49,6 +58,18 @@ export function SessionSummary() {
         <div><dt>Serie</dt><dd>{sets.length}</dd></div>
         <div><dt>Esercizi</dt><dd>{done.length}</dd></div>
       </dl>
+
+      {records.size > 0 && (
+        <div className="record-box">
+          <h2><Icon name="trophy" size={22} /> {records.size === 1 ? 'Nuovo record' : `${records.size} nuovi record`}</h2>
+          {sets.filter((s) => records.has(s.id)).map((s) => (
+            <div key={s.id} className="record-line">
+              <span className="strong">{exercises.get(s.exercise_id)?.name}</span>
+              <span>{recordValue(s, records.get(s.id)!, exercises.get(s.exercise_id))} · {RECORD_LABEL[records.get(s.id)!].toLowerCase()}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="list">
         {done.map((w) => {

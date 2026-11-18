@@ -1,5 +1,8 @@
 import { Route, Routes, useLocation } from 'react-router-dom';
 import { auth } from './auth';
+import { Andamento } from './pages/Andamento';
+import { ExerciseProgress } from './pages/ExerciseProgress';
+import { WorkoutDetail } from './pages/WorkoutDetail';
 import { BottomNav } from './components/Layout';
 import { LogoMark } from './components/Logo';
 import { Exercises } from './pages/Exercises';
@@ -36,7 +39,9 @@ export function App() {
           <Route path="/allena" element={<Train />} />
           <Route path="/sessione/:id" element={<Session />} />
           <Route path="/sessione/:id/riepilogo" element={<SessionSummary />} />
-          <Route path="/andamento" element={<Soon title="Andamento" icon="andamento" stage={4} text="Storico, progressi, record, calendario e bilanciamento." />} />
+          <Route path="/andamento" element={<Andamento />} />
+          <Route path="/andamento/sessione/:id" element={<WorkoutDetail />} />
+          <Route path="/andamento/esercizio/:id" element={<ExerciseProgress />} />
           <Route path="/altro" element={<More />} />
           <Route path="/esercizi" element={<Exercises />} />
           <Route path="/esercizi/nuovo" element={<ExerciseForm />} />

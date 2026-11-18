@@ -21,7 +21,7 @@ class GymDB extends Dexie {
     super('gymbro');
     const stores: Record<string, string> = { blobs: 'id, uploaded', kv: 'key' };
     for (const name of TABLE_NAMES) {
-      const indexes: string[] = TABLES[name].indexes ?? [];
+      const indexes: string[] = (TABLES[name] as { indexes?: string[] }).indexes ?? [];
       stores[name] = ['id', '_dirty', ...indexes].join(', ');
     }
     this.version(LOCAL_DB_VERSION).stores(stores);

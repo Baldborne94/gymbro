@@ -35,6 +35,8 @@ const P: Record<string, ReactNode> = {
   note: <path d="M5 4h14v12l-4 4H5zM15 20v-4h4M8 9h8M8 13h5" />,
   timer: <><circle cx="12" cy="13" r="7.5" /><path d="M12 9v4l2.5 2M9.5 3h5" /></>,
   flag: <path d="M5 21V4h13l-2.5 4.5L18 13H5" />,
+  trophy: <path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H4v1a3 3 0 0 0 4 3M16 6h4v1a3 3 0 0 1-4 3M12 13v4M8 20h8M9 17h6" />,
+  up: <path d="M12 19V5M6 11l6-6 6 6" />,
   // Attrezzi
   bilanciere: <path d="M2 12h20M5 8v8M8 6v12M19 8v8M16 6v12" />,
   manubri: <path d="M8 12h8M5 8.5v7M8 7v10M19 8.5v7M16 7v10" />,

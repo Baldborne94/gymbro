@@ -24,3 +24,10 @@ export const WEEKDAYS_LONG = ['lunedì', 'martedì', 'mercoledì', 'giovedì', '
 export const clock = (sec: number) => `${Math.floor(sec / 60)}:${pad(Math.round(sec) % 60)}`;
 /** Numero con la virgola decimale. */
 export const num = (n: number) => n.toLocaleString('it-IT', { maximumFractionDigits: 2 });
+
+/** Lunedì della settimana che contiene la data. */
+export const weekStart = (iso: string) => {
+  const d = parseDate(iso);
+  return addDays(iso, -((d.getDay() + 6) % 7));
+};
+export const MONTHS = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];

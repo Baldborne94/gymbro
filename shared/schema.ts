@@ -11,7 +11,7 @@ export interface TableDef {
 }
 
 /** Da incrementare quando si aggiungono tabelle o indici (versione IndexedDB). */
-export const LOCAL_DB_VERSION = 3;
+export const LOCAL_DB_VERSION = 4;
 
 export const TABLES = {
   exercises: {
@@ -91,6 +91,8 @@ export const TABLES = {
     },
     indexes: ['workout_id', 'workout_exercise_id', 'exercise_id'],
   },
+  // Impostazioni: l'id è il nome dell'impostazione.
+  settings: { cols: { value: 'json' } },
 } satisfies Record<string, TableDef>;
 
 export type TableName = keyof typeof TABLES;
@@ -266,7 +268,12 @@ export interface WorkoutSet extends SyncRow {
   done_at: number | null;
 }
 
+export interface Setting extends SyncRow {
+  value: unknown;
+}
+
 export interface RowTypes {
+  settings: Setting;
   workouts: Workout;
   workout_exercises: WorkoutExercise;
   sets: WorkoutSet;
