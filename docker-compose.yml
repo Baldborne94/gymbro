@@ -9,5 +9,11 @@ services:
     environment:
       GYMBRO_PASSWORD: "${GYMBRO_PASSWORD:?Imposta GYMBRO_PASSWORD nel file .env}"
       TZ: "${TZ:-Europe/Rome}"
+      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
+      BACKUP_DIR: /backups
+      BACKUP_TIME: "${BACKUP_TIME:-03:00}"
+      BACKUP_KEEP: "${BACKUP_KEEP:-7}"
+      PUSH_CONTACT: "${PUSH_CONTACT:-mailto:gymbro@example.com}"
     volumes:
       - "${GYMBRO_DATA:-./data}:/data"
+      - "${GYMBRO_BACKUPS:-./backups}:/backups"

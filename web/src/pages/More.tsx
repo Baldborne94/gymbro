@@ -33,10 +33,10 @@ function SyncCard() {
 
 export function More() {
   const { features } = auth.use();
-  const soon = [
-    ...(features.coach ? [{ icon: 'coach', label: 'Coach AI', note: 'Tappa 6' }] : []),
-    { icon: 'bell', label: 'Promemoria', note: 'Tappa 6' },
-    { icon: 'dati', label: 'Dati e backup', note: 'Tappa 6' },
+  const links = [
+    ...(features.coach ? [{ to: '/coach', icon: 'coach', label: 'Coach AI', note: 'Progressione, esercizi fermi, nuova scheda' }] : []),
+    { to: '/promemoria', icon: 'bell', label: 'Promemoria', note: 'Notifiche nei giorni di allenamento' },
+    { to: '/dati', icon: 'dati', label: 'Dati e backup', note: 'Esporta, importa, copie automatiche' },
   ];
   return (
     <Page title="Altro">
@@ -62,14 +62,15 @@ export function More() {
           </div>
           <Icon name="chev" />
         </Link>
-        {soon.map((x) => (
-          <div key={x.label} className="list-row disabled">
+        {links.map((x) => (
+          <Link key={x.to} to={x.to} className="list-row">
             <div className="tile"><Icon name={x.icon} size={26} /></div>
             <div className="grow">
               <div className="strong">{x.label}</div>
               <div className="muted">{x.note}</div>
             </div>
-          </div>
+            <Icon name="chev" />
+          </Link>
         ))}
       </div>
       <h2 className="section">Sincronizzazione</h2>

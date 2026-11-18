@@ -42,7 +42,7 @@ export function SessionSummary() {
   const done = wes.filter((w) => sets.some((s) => s.workout_exercise_id === w.id));
 
   return (
-    <div className="session summary">
+    <div className="session summary-page">
       <div className="summary-hero">
         <div className="summary-disc" aria-hidden="true">
           <span /><span /><span />
