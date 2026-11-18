@@ -89,7 +89,7 @@ export function Train() {
       {!running && (
         <button className="btn" onClick={() => void start(null)}><Icon name="plus" size={20} /> Sessione libera</button>
       )}
-      <p className="muted">Il cardio arriva con la tappa 5.</p>
+      <Link to="/cardio/nuovo" className="btn"><Icon name="run" size={20} /> Registra cardio</Link>
     </Page>
   );
 }
