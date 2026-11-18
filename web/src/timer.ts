@@ -87,6 +87,25 @@ function beep() {
   });
 }
 
+/** Squillo ascendente per un nuovo record. */
+export function fanfare() {
+  if (!audio) return;
+  const t0 = audio.currentTime;
+  [523, 659, 784, 1047].forEach((freq, i) => {
+    const osc = audio!.createOscillator();
+    const gain = audio!.createGain();
+    osc.type = 'triangle';
+    osc.frequency.value = freq;
+    const at = t0 + i * 0.11;
+    gain.gain.setValueAtTime(0.0001, at);
+    gain.gain.exponentialRampToValueAtTime(0.3, at + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, at + (i === 3 ? 0.6 : 0.18));
+    osc.connect(gain).connect(audio!.destination);
+    osc.start(at);
+    osc.stop(at + 0.7);
+  });
+}
+
 // --- Ganci React ---
 
 /** Ora corrente, aggiornata a intervalli regolari. */

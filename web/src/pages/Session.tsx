@@ -14,7 +14,8 @@ import { RestBar } from '../components/RestBar';
 import { Stepper } from '../components/Stepper';
 import { num } from '../dates';
 import { db, patch, remove, type Local } from '../db';
-import { skipRest, startRest, unlockAudio, useNow, useWakeLock } from '../timer';
+import { RECORD_LABEL, findRecords, recordValue, suggestIncrease, type RecordKind } from '../stats';
+import { fanfare, skipRest, startRest, unlockAudio, useNow, useWakeLock } from '../timer';
 import {
   addExercise, addSet, discardWorkout, finishWorkout, formatDuration, formatEffort, formatSet,
   lastSets, removeExercise, substitute, unitOf,
@@ -84,6 +85,22 @@ function Stopwatch({ onStop }: { onStop: (seconds: number) => void }) {
   );
 }
 
+/** Celebrazione a tutto schermo per un nuovo record personale. */
+function RecordBurst({ title, value, onClose }: { title: string; value: string; onClose: () => void }) {
+  useEffect(() => {
+    const t = setTimeout(onClose, 3200);
+    return () => clearTimeout(t);
+  }, [onClose]);
+  return (
+    <button className="record-burst" onClick={onClose} aria-label="Nuovo record personale. Tocca per chiudere">
+      <span className="burst-rings" aria-hidden="true"><span /><span /><span /><Icon name="trophy" size={64} /></span>
+      <span className="burst-title">Nuovo record!</span>
+      <span className="burst-value">{value}</span>
+      <span className="burst-kind">{title}</span>
+    </button>
+  );
+}
+
 export function Session() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
@@ -108,6 +125,8 @@ export function Session() {
   const [justDone, setJustDone] = useState<string | null>(null);
   const [sheet, setSheet] = useState<null | 'menu' | 'elenco' | 'sforzo' | 'fine' | 'note'>(null);
   const [picker, setPicker] = useState<null | 'aggiungi' | 'sostituisci'>(null);
+  const [burst, setBurst] = useState<null | { title: string; value: string }>(null);
+  const [dismissed, setDismissed] = useState<string[]>([]);
 
   const wes = data?.wes ?? [];
   const setsOf = (weId: string) => (data?.sets ?? []).filter((s) => s.workout_exercise_id === weId);
@@ -119,6 +138,11 @@ export function Session() {
   const ex = we ? data?.exercises.get(we.exercise_id) : undefined;
 
   const previous = useLiveQuery(async () => (we ? lastSets(we.exercise_id, id) : []), [we?.exercise_id, id]);
+  // Tutte le serie fatte di questo esercizio, per riconoscere i record.
+  const history = useLiveQuery(
+    async () => (we ? (await db.sets.where('exercise_id').equals(we.exercise_id).toArray()).filter((s) => !s.deleted && s.done) : []),
+    [we?.exercise_id],
+  );
 
   useEffect(() => {
     if (data && data.workout?.finished_at) navigate(`/sessione/${id}/riepilogo`, { replace: true });
@@ -144,6 +168,19 @@ export function Session() {
   const timed = ex?.kind === 'tempo';
   const bodyweight = ex?.kind === 'corpo_libero';
 
+  const records = findRecords(history ?? [], ex);
+  const planned = sets.filter((s) => s.kind === 'normale').length;
+  const suggested = we ? suggestIncrease(previous ?? [], we.reps_max, planned, ex) : null;
+  const todoSets = sets.filter((s) => !s.done && s.kind !== 'riscaldamento');
+  const showSuggestion = suggested !== null && we && !dismissed.includes(we.id) && todoSets.length > 0
+    && todoSets.some((s) => (s.load ?? 0) < suggested) && !sets.some((s) => s.done && s.kind !== 'riscaldamento');
+
+  async function applySuggestion() {
+    if (suggested === null || !we) return;
+    for (const s of todoSets) await patch('sets', s.id, { load: suggested, reps: we.reps_min ?? s.reps });
+    setDismissed((d) => [...d, we.id]);
+  }
+
   const go = (weId: string) => { setCurrentId(weId); setSelectedSet(null); setSheet(null); };
 
   /** Esercizi legati in superset a quello indicato (indici consecutivi). */
@@ -166,8 +203,17 @@ export function Session() {
     unlockAudio();
     navigator.vibrate?.(40);
     if (editingDone) return setSelectedSet(null);
-    await patch('sets', set.id, { done: true, done_at: Date.now() });
+    const doneAt = Date.now();
+    await patch('sets', set.id, { done: true, done_at: doneAt });
     setJustDone(set.id);
+    const hit: RecordKind | undefined = findRecords(
+      [...(history ?? []).filter((h) => h.id !== set.id), { ...set, done: true, done_at: doneAt }], ex,
+    ).get(set.id);
+    if (hit) {
+      setBurst({ title: RECORD_LABEL[hit], value: recordValue(set, hit, ex) });
+      fanfare();
+      navigator.vibrate?.([80, 60, 80, 60, 240]);
+    }
     setSelectedSet(null);
     setTimeout(() => setJustDone((cur) => (cur === set.id ? null : cur)), 900);
 
@@ -262,6 +308,18 @@ export function Session() {
             </div>
           )}
 
+          {showSuggestion && (
+            <div className="suggest">
+              <Icon name="up" size={26} />
+              <div className="grow">
+                <div className="strong">Pronto a salire: {num(suggested!)} {unitOf(ex)}</div>
+                <div className="muted">L'ultima volta hai chiuso tutte le serie a {we.reps_max} rip.</div>
+              </div>
+              <button className="btn btn-small btn-primary" onClick={() => void applySuggestion()}>Applica</button>
+              <button className="icon-btn" aria-label="Ignora la proposta" onClick={() => setDismissed((d) => [...d, we.id])}><Icon name="close" size={20} /></button>
+            </div>
+          )}
+
           <div className="set-list">
             {sets.map((s) => (
               <button
@@ -271,6 +329,7 @@ export function Session() {
               >
                 <span className="set-tag">{setTag(sets, s)}</span>
                 <span className="set-value">{formatSet(s, ex)}</span>
+                {records.has(s.id) && <span className="badge badge-accent">Record</span>}
                 {formatEffort(s) && <span className="muted">{formatEffort(s)}</span>}
                 {s.done
                   ? <span className="set-check"><Icon name="check" size={20} label="Completata" /></span>
@@ -362,6 +421,8 @@ export function Session() {
           <button className="btn btn-finish" onClick={() => setSheet('fine')}><Icon name="flag" size={20} /> Fine</button>
         </div>
       </div>
+
+      {burst && <RecordBurst title={burst.title} value={burst.value} onClose={() => setBurst(null)} />}
 
       {sheet === 'sforzo' && active && <EffortSheet set={active} onClose={() => setSheet(null)} />}
 

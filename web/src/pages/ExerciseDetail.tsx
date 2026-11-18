@@ -58,6 +58,8 @@ export function ExerciseDetail() {
 
       {ex.photo_id && <Photo id={ex.photo_id} alt={`Foto di ${ex.name}`} className="photo" />}
 
+      <Link to={`/andamento/esercizio/${ex.id}`} className="btn"><Icon name="andamento" size={20} /> Progressi e record</Link>
+
       <button className="btn btn-ghost btn-danger" onClick={() => setConfirm(true)}>
         <Icon name="trash" size={20} /> Elimina esercizio
       </button>
