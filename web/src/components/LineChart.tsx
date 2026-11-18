@@ -55,7 +55,7 @@ export function LineChart({ points, unit, label }: { points: ChartPoint[]; unit:
         ref={ref}
         viewBox={`0 0 ${W} ${H}`}
         role="img"
-        aria-label={`${label}: da ${num(points[0].value)} a ${num(points[points.length - 1].value)} ${unit} in ${points.length} sessioni`}
+        aria-label={`${label}: da ${num(points[0].value)} a ${num(points[points.length - 1].value)} ${unit} in ${points.length} rilevazioni`}
         onPointerMove={(e) => onMove(e.clientX)}
         onPointerDown={(e) => onMove(e.clientX)}
         onPointerLeave={() => setHover(null)}

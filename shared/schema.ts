@@ -11,7 +11,7 @@ export interface TableDef {
 }
 
 /** Da incrementare quando si aggiungono tabelle o indici (versione IndexedDB). */
-export const LOCAL_DB_VERSION = 4;
+export const LOCAL_DB_VERSION = 5;
 
 export const TABLES = {
   exercises: {
@@ -90,6 +90,21 @@ export const TABLES = {
       done_at: 'int',
     },
     indexes: ['workout_id', 'workout_exercise_id', 'exercise_id'],
+  },
+  cardio_sessions: {
+    cols: { date: 'text', started_at: 'int', activity: 'text', duration_sec: 'int', distance_km: 'real', notes: 'text' },
+    indexes: ['date'],
+  },
+  body_measurements: {
+    cols: {
+      date: 'text', weight: 'real', body_fat: 'real', chest: 'real', shoulders: 'real', waist: 'real',
+      hips: 'real', arm: 'real', thigh: 'real', calf: 'real', neck: 'real', notes: 'text',
+    },
+    indexes: ['date'],
+  },
+  progress_photos: {
+    cols: { date: 'text', photo_id: 'text', pose: 'text', notes: 'text' },
+    indexes: ['date'],
   },
   // Impostazioni: l'id è il nome dell'impostazione.
   settings: { cols: { value: 'json' } },
@@ -268,11 +283,67 @@ export interface WorkoutSet extends SyncRow {
   done_at: number | null;
 }
 
+export type CardioActivity = 'corsa' | 'tapis_roulant' | 'cyclette' | 'vogatore' | 'camminata' | 'ellittica' | 'nuoto' | 'altro';
+
+export const CARDIO: { id: CardioActivity; label: string; icon: string }[] = [
+  { id: 'corsa', label: 'Corsa', icon: 'run' },
+  { id: 'tapis_roulant', label: 'Tapis roulant', icon: 'run' },
+  { id: 'cyclette', label: 'Cyclette', icon: 'bike' },
+  { id: 'vogatore', label: 'Vogatore', icon: 'row' },
+  { id: 'camminata', label: 'Camminata', icon: 'walk' },
+  { id: 'ellittica', label: 'Ellittica', icon: 'heart' },
+  { id: 'nuoto', label: 'Nuoto', icon: 'wave' },
+  { id: 'altro', label: 'Altro', icon: 'heart' },
+];
+
+export interface CardioSession extends SyncRow {
+  date: string;
+  started_at: number;
+  activity: CardioActivity;
+  duration_sec: number;
+  distance_km: number | null;
+  notes: string;
+}
+
+export const BODY_FIELDS = [
+  { id: 'weight', label: 'Peso', unit: 'kg' },
+  { id: 'body_fat', label: 'Massa grassa', unit: '%' },
+  { id: 'chest', label: 'Petto', unit: 'cm' },
+  { id: 'shoulders', label: 'Spalle', unit: 'cm' },
+  { id: 'waist', label: 'Vita', unit: 'cm' },
+  { id: 'hips', label: 'Fianchi', unit: 'cm' },
+  { id: 'arm', label: 'Braccio', unit: 'cm' },
+  { id: 'thigh', label: 'Coscia', unit: 'cm' },
+  { id: 'calf', label: 'Polpaccio', unit: 'cm' },
+  { id: 'neck', label: 'Collo', unit: 'cm' },
+] as const;
+
+export type BodyField = (typeof BODY_FIELDS)[number]['id'];
+
+export type BodyMeasurement = SyncRow & { date: string; notes: string } & { [K in BodyField]: number | null };
+
+export type Pose = 'fronte' | 'lato' | 'retro';
+export const POSES: { id: Pose; label: string }[] = [
+  { id: 'fronte', label: 'Fronte' },
+  { id: 'lato', label: 'Lato' },
+  { id: 'retro', label: 'Retro' },
+];
+
+export interface ProgressPhoto extends SyncRow {
+  date: string;
+  photo_id: string;
+  pose: Pose;
+  notes: string;
+}
+
 export interface Setting extends SyncRow {
   value: unknown;
 }
 
 export interface RowTypes {
+  cardio_sessions: CardioSession;
+  body_measurements: BodyMeasurement;
+  progress_photos: ProgressPhoto;
   settings: Setting;
   workouts: Workout;
   workout_exercises: WorkoutExercise;

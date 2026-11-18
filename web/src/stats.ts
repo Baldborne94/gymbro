@@ -1,4 +1,4 @@
-import type { Exercise, MuscleId, Workout, WorkoutExercise, WorkoutSet } from '../../shared/schema';
+import type { CardioSession, Exercise, MuscleId, Workout, WorkoutExercise, WorkoutSet } from '../../shared/schema';
 import { addDays, isoDate, num, weekStart } from './dates';
 import { db } from './db';
 import { loadKg, setVolume, unitOf } from './workout';
@@ -95,7 +95,11 @@ export interface Overview {
   workouts: WorkoutSummary[];
   exercises: Map<string, Exercise>;
   wes: WorkoutExercise[];
+  cardio: CardioSession[];
 }
+
+/** Tutti i giorni con attività, pesi o cardio (una voce per sessione). */
+export const activityDates = (o: Overview) => [...o.workouts.map((w) => w.workout.date), ...o.cardio.map((c) => c.date)];
 
 export async function loadOverview(): Promise<Overview> {
   const exercises = new Map((await db.exercises.toArray()).map((e) => [e.id, e as Exercise]));
@@ -119,7 +123,8 @@ export async function loadOverview(): Promise<Overview> {
         exercises: new Set(ws.map((s) => s.workout_exercise_id)).size,
       };
     });
-  return { workouts, exercises, wes };
+  const cardio = (await db.cardio_sessions.toArray()).filter((c) => !c.deleted).sort((a, b) => b.started_at - a.started_at);
+  return { workouts, exercises, wes, cardio };
 }
 
 /** Numero di sessioni per settimana (chiave: lunedì della settimana). */

@@ -34,7 +34,6 @@ function SyncCard() {
 export function More() {
   const { features } = auth.use();
   const soon = [
-    { icon: 'strumenti', label: 'Strumenti', note: 'Calcolatore dischi e massimale · tappa 5' },
     ...(features.coach ? [{ icon: 'coach', label: 'Coach AI', note: 'Tappa 6' }] : []),
     { icon: 'bell', label: 'Promemoria', note: 'Tappa 6' },
     { icon: 'dati', label: 'Dati e backup', note: 'Tappa 6' },
@@ -45,6 +44,22 @@ export function More() {
         <Link to="/esercizi" className="list-row">
           <div className="tile"><Icon name="bilanciere" size={26} /></div>
           <div className="grow strong">Libreria esercizi</div>
+          <Icon name="chev" />
+        </Link>
+        <Link to="/strumenti" className="list-row">
+          <div className="tile"><Icon name="strumenti" size={26} /></div>
+          <div className="grow">
+            <div className="strong">Strumenti</div>
+            <div className="muted">Dischi da caricare e massimale</div>
+          </div>
+          <Icon name="chev" />
+        </Link>
+        <Link to="/andamento?v=corpo" className="list-row">
+          <div className="tile"><Icon name="scale" size={26} /></div>
+          <div className="grow">
+            <div className="strong">Corpo</div>
+            <div className="muted">Peso, misure e foto di avanzamento</div>
+          </div>
           <Icon name="chev" />
         </Link>
         {soon.map((x) => (

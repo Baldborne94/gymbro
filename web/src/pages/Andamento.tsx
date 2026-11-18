@@ -9,16 +9,19 @@ import { Stepper } from '../components/Stepper';
 import { MONTHS, WEEKDAYS, addDays, formatDate, isoDate, num, parseDate, weekStart } from '../dates';
 import { setSetting, useSetting } from '../settings';
 import {
-  RECORD_LABEL, allRecords, exerciseProgress, loadOverview, muscleSets, recordValue, sessionsByWeek, weekStreak,
+  RECORD_LABEL, activityDates, allRecords, exerciseProgress, loadOverview, muscleSets, recordValue, sessionsByWeek, weekStreak,
   type Overview, type WorkoutSummary,
 } from '../stats';
 import { formatDuration, formatSet } from '../workout';
+import { BodyView } from './Body';
+import { CardioRow } from './Cardio';
 
 const VIEWS = [
   { id: 'storico', label: 'Storico' },
   { id: 'progressi', label: 'Progressi' },
   { id: 'calendario', label: 'Calendario' },
   { id: 'bilanciamento', label: 'Muscoli' },
+  { id: 'corpo', label: 'Corpo' },
 ];
 
 export function WorkoutRow({ w }: { w: WorkoutSummary }) {
@@ -41,18 +44,23 @@ export function WorkoutRow({ w }: { w: WorkoutSummary }) {
 }
 
 function History({ data }: { data: Overview }) {
-  if (!data.workouts.length) {
+  type Entry = { key: string; date: string; at: number; node: React.ReactNode };
+  const entries: Entry[] = [
+    ...data.workouts.map((w) => ({ key: w.workout.id, date: w.workout.date, at: w.workout.started_at, node: <WorkoutRow w={w} /> })),
+    ...data.cardio.map((c) => ({ key: c.id, date: c.date, at: c.started_at, node: <CardioRow c={c} /> })),
+  ].sort((a, b) => b.date.localeCompare(a.date) || b.at - a.at);
+  if (!entries.length) {
     return (
       <div className="empty">
         <div className="empty-icon"><Icon name="andamento" size={44} /></div>
-        <p>Qui compariranno le sessioni concluse.</p>
+        <p>Qui compariranno le sessioni concluse, pesi e cardio.</p>
       </div>
     );
   }
-  const groups = new Map<string, WorkoutSummary[]>();
-  for (const w of data.workouts) {
-    const key = w.workout.date.slice(0, 7);
-    groups.set(key, [...(groups.get(key) ?? []), w]);
+  const groups = new Map<string, Entry[]>();
+  for (const e of entries) {
+    const key = e.date.slice(0, 7);
+    groups.set(key, [...(groups.get(key) ?? []), e]);
   }
   return (
     <>
@@ -61,7 +69,7 @@ function History({ data }: { data: Overview }) {
           <h2 className="section">
             {MONTHS[Number(month.slice(5)) - 1]} {month.slice(0, 4)} · {list.length} {list.length === 1 ? 'sessione' : 'sessioni'}
           </h2>
-          <div className="list">{list.map((w) => <WorkoutRow key={w.workout.id} w={w} />)}</div>
+          <div className="list">{list.map((e) => <div key={e.key} className="contents">{e.node}</div>)}</div>
         </section>
       ))}
     </>
@@ -133,10 +141,15 @@ function Calendar({ data }: { data: Overview }) {
   const goal = useSetting('weekly_goal', 3);
   const [month, setMonth] = useState(today.slice(0, 7));
   const [selected, setSelected] = useState<string | null>(null);
-  const dates = useMemo(() => data.workouts.map((w) => w.workout.date), [data]);
+  const dates = useMemo(() => activityDates(data), [data]);
   const perDay = useMemo(() => {
     const m = new Map<string, WorkoutSummary[]>();
     for (const w of data.workouts) m.set(w.workout.date, [...(m.get(w.workout.date) ?? []), w]);
+    return m;
+  }, [data]);
+  const cardioDay = useMemo(() => {
+    const m = new Map<string, typeof data.cardio>();
+    for (const c of data.cardio) m.set(c.date, [...(m.get(c.date) ?? []), c]);
     return m;
   }, [data]);
   const weeks = sessionsByWeek(dates);
@@ -182,8 +195,10 @@ function Calendar({ data }: { data: Overview }) {
             const n = weeks.get(week[0]) ?? 0;
             return [
               ...week.map((d) => {
-                const count = perDay.get(d)?.length ?? 0;
-                const cls = `cal-day${d.slice(0, 7) !== month ? ' out' : ''}${count ? ' trained' : ''}${d === today ? ' today' : ''}${d === selected ? ' selected' : ''}`;
+                const lifts = perDay.get(d)?.length ?? 0;
+                const cardio = cardioDay.get(d)?.length ?? 0;
+                const count = lifts + cardio;
+                const cls = `cal-day${d.slice(0, 7) !== month ? ' out' : ''}${lifts ? ' trained' : cardio ? ' cardio' : ''}${d === today ? ' today' : ''}${d === selected ? ' selected' : ''}`;
                 return (
                   <button key={d} className={cls} disabled={!count} onClick={() => setSelected(d === selected ? null : d)}
                     aria-label={`${formatDate(d)}${count ? `, ${count} ${count === 1 ? 'sessione' : 'sessioni'}` : ''}`}>
@@ -195,9 +210,18 @@ function Calendar({ data }: { data: Overview }) {
             ];
           })}
         </div>
-        <p className="muted">I giorni evidenziati sono quelli di allenamento; l'ultima colonna conta le sessioni della settimana.</p>
+        <div className="legend">
+          <span><i className="cal-day trained" /> Pesi</span>
+          <span><i className="cal-day cardio" /> Solo cardio</span>
+          <span><b>Σ</b> sessioni nella settimana</span>
+        </div>
       </div>
-      {selected && <div className="list">{(perDay.get(selected) ?? []).map((w) => <WorkoutRow key={w.workout.id} w={w} />)}</div>}
+      {selected && (
+        <div className="list">
+          {(perDay.get(selected) ?? []).map((w) => <WorkoutRow key={w.workout.id} w={w} />)}
+          {(cardioDay.get(selected) ?? []).map((c) => <CardioRow key={c.id} c={c} />)}
+        </div>
+      )}
     </>
   );
 }
@@ -248,9 +272,9 @@ export function Andamento() {
   const data = useLiveQuery(loadOverview, []);
   return (
     <Page title="Andamento">
-      <div className="segmented" role="tablist">
+      <div className="chips" role="tablist">
         {VIEWS.map((v) => (
-          <button key={v.id} role="tab" aria-selected={view === v.id} className={view === v.id ? 'on' : ''} onClick={() => setParams({ v: v.id }, { replace: true })}>
+          <button key={v.id} role="tab" aria-selected={view === v.id} className={`chip chip-tab${view === v.id ? ' on' : ''}`} onClick={() => setParams({ v: v.id }, { replace: true })}>
             {v.label}
           </button>
         ))}
@@ -259,7 +283,7 @@ export function Andamento() {
       {data && view === 'progressi' && <Progress data={data} />}
       {data && view === 'calendario' && <Calendar data={data} />}
       {data && view === 'bilanciamento' && <Balance data={data} />}
-      <p className="muted">Il cardio e le misure del corpo arrivano con la tappa 5.</p>
+      {view === 'corpo' && <BodyView />}
     </Page>
   );
 }
