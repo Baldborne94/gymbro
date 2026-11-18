@@ -29,6 +29,8 @@ const SQL_TYPE: Record<ColType, string> = { text: 'TEXT', int: 'INTEGER', real: 
 
 function migrate() {
   db.exec(`CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)`);
+  // Iscrizioni alle notifiche: restano sul server, non si sincronizzano.
+  db.exec(`CREATE TABLE IF NOT EXISTS push_subscriptions (endpoint TEXT PRIMARY KEY, data TEXT NOT NULL, created_at INTEGER NOT NULL)`);
   for (const name of TABLE_NAMES) {
     db.exec(`CREATE TABLE IF NOT EXISTS ${name} (
       id TEXT PRIMARY KEY,
@@ -115,7 +117,45 @@ export const sync = (since: number, changes: Changes) => transaction(() => {
     const rows = rowsSince(table, since);
     if (rows.length) out[table] = rows;
   }
-  return { rev: currentRev(), changes: out as Changes };
+  return { rev: currentRev(), epoch: getMeta('epoch') ?? '', changes: out as Changes };
+});
+
+// Per accorgersi di un ripristino: accanto al database si annota il numero di revisione più alto raggiunto.
+const revFile = path.join(DATA_DIR, '.rev');
+export function noteRev() {
+  try { fs.writeFileSync(revFile, String(currentRev())); } catch { /* cartella non scrivibile: si riprova al prossimo giro */ }
+}
+function checkRestore() {
+  const seen = fs.existsSync(revFile) ? Number(fs.readFileSync(revFile, 'utf8')) : 0;
+  if (!getMeta('epoch') || seen > currentRev()) {
+    // Database nuovo o tornato indietro: i dispositivi rimanderanno tutto ciò che hanno.
+    if (seen > currentRev()) console.log('Database ripristinato da una copia: i dispositivi invieranno di nuovo i propri dati.');
+    setMeta('epoch', `${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  }
+  noteRev();
+}
+
+/** Righe non eliminate di una tabella, già decodificate. */
+export function liveRows<T = Record<string, unknown>>(table: TableName): T[] {
+  return rowsSince(table, 0).filter((r) => !r.deleted) as T[];
+}
+
+/**
+ * Importa righe da un'esportazione: ogni riga viene riscritta con data di modifica
+ * attuale, così prevale su quella presente e raggiunge tutti i dispositivi.
+ */
+export const importRows = (tables: Record<string, unknown>) => transaction(() => {
+  const now = Date.now();
+  const counts: Record<string, number> = {};
+  for (const table of TABLE_NAMES) {
+    const rows = tables[table];
+    if (!Array.isArray(rows)) continue;
+    counts[table] = 0;
+    for (const row of rows) {
+      if (upsert(table, { ...(row as Record<string, unknown>), updated_at: now, deleted: false })) counts[table]++;
+    }
+  }
+  return counts;
 });
 
 const seed = () => transaction(() => {
@@ -127,3 +167,4 @@ const seed = () => transaction(() => {
 
 migrate();
 seed();
+checkRestore();

@@ -363,6 +363,8 @@ export interface SyncRequest {
 
 export interface SyncResponse {
   rev: number;
+  /** Cambia quando il database del server viene ripristinato da una copia più vecchia. */
+  epoch: string;
   changes: Changes;
 }
 

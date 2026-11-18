@@ -59,6 +59,17 @@ async function runSync() {
   if (!res.ok) throw new Error(`Sincronizzazione: ${res.status}`);
   const data = (await res.json()) as SyncResponse;
 
+  // Server ripristinato da una copia più vecchia: si rimanda tutto ciò che c'è sul dispositivo.
+  const knownEpoch = (await db.kv.get('epoch'))?.value as string | undefined;
+  if ((knownEpoch && data.epoch && knownEpoch !== data.epoch) || data.rev < since) {
+    for (const name of TABLE_NAMES) await table(name).toCollection().modify({ _dirty: 1 });
+    await db.blobs.toCollection().modify({ uploaded: 0 });
+    await db.kv.bulkPut([{ key: 'rev', value: 0 }, { key: 'epoch', value: data.epoch }]);
+    again = true;
+    return;
+  }
+  if (data.epoch && knownEpoch !== data.epoch) await db.kv.put({ key: 'epoch', value: data.epoch });
+
   await db.transaction('rw', [...TABLE_NAMES.map((n) => db.table(n)), db.kv], async () => {
     for (const name of TABLE_NAMES) {
       const t = table(name);

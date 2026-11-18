@@ -2,6 +2,9 @@ import { Route, Routes, useLocation } from 'react-router-dom';
 import { auth } from './auth';
 import { Andamento } from './pages/Andamento';
 import { MeasurementForm } from './pages/Body';
+import { Coach } from './pages/Coach';
+import { Data } from './pages/Data';
+import { Reminders } from './pages/Reminders';
 import { CardioForm } from './pages/Cardio';
 import { ExerciseProgress } from './pages/ExerciseProgress';
 import { Tools } from './pages/Tools';
@@ -51,6 +54,9 @@ export function App() {
           <Route path="/corpo/misura/nuova" element={<MeasurementForm />} />
           <Route path="/corpo/misura/:id" element={<MeasurementForm />} />
           <Route path="/strumenti" element={<Tools />} />
+          <Route path="/coach" element={<Coach />} />
+          <Route path="/promemoria" element={<Reminders />} />
+          <Route path="/dati" element={<Data />} />
           <Route path="/esercizi" element={<Exercises />} />
           <Route path="/esercizi/nuovo" element={<ExerciseForm />} />
           <Route path="/esercizi/:id" element={<ExerciseDetail />} />
