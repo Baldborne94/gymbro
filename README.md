@@ -9,7 +9,7 @@ Un solo utente, un solo container, nessun servizio cloud: database e foto stanno
 ## Indice
 
 1. [Avvio rapido sul PC](#avvio-rapido-sul-pc)
-2. [Installazione sul NAS](#installazione-sul-nas)
+2. [Installazione sul NAS Synology](#installazione-sul-nas-synology)
 3. [HTTPS: perché serve e come ottenerlo](#https-perché-serve-e-come-ottenerlo)
 4. [Installare l'app sul telefono](#installare-lapp-sul-telefono)
 5. [Variabili d'ambiente](#variabili-dambiente)
@@ -39,41 +39,81 @@ docker compose up -d --build
 
 L'app risponde su `http://localhost:8080`. Su `localhost` funzionano anche installazione e uso offline, senza HTTPS.
 
-## Installazione sul NAS
+## Installazione sul NAS Synology
 
-Lo stesso `docker-compose.yml` vale per PC e NAS. Serve un NAS che esegua Docker (su Synology "Container Manager", su QNAP "Container Station") con processore x86-64 o ARM a 64 bit.
+Lo stesso `docker-compose.yml` vale per PC e NAS. Servono DSM 7.2 o successivo e un modello che supporti **Container Manager** (processore x86-64 o ARM a 64 bit).
 
-1. Copia questa cartella sul NAS, per esempio in una cartella condivisa `docker/gymbro`.
-2. Crea il file `.env` partendo da `.env.example` e imposta:
-   - `GYMBRO_PASSWORD`: la password di accesso.
-   - `GYMBRO_DATA`: la cartella dei dati, per esempio `/volume1/docker/gymbro/data`.
-   - `GYMBRO_BACKUPS`: la cartella delle copie, se possibile su un volume o disco diverso.
-3. Avvia il container. Da terminale (SSH), nella cartella del progetto:
+I nomi dei menu sono quelli di DSM 7.2 in italiano; tra parentesi il nome inglese, utile se la tua versione li traduce in modo diverso.
 
-   ```bash
-   docker compose up -d --build
-   ```
+### 1. Installa Container Manager
 
-   In alternativa, dall'interfaccia del NAS crea un nuovo progetto Compose indicando questa cartella.
-4. Controlla che risponda: `http://IP-DEL-NAS:8080`.
+**Centro pacchetti** (Package Center) → cerca **Container Manager** → **Installa**. L'installazione crea la cartella condivisa `docker`.
 
-La prima build scarica l'immagine di Node e le dipendenze: su un NAS può richiedere alcuni minuti.
+### 2. Copia il progetto sul NAS
 
-Se il NAS salva i file con un utente diverso da `root` e vuoi che il container scriva con quell'utente, aggiungi al servizio in `docker-compose.yml` una riga `user: "UID:GID"` con i tuoi identificativi, dopo aver dato a quell'utente i permessi sulle due cartelle.
+1. Apri **File Station**, entra nella cartella condivisa `docker` e crea la cartella `gymbro`.
+2. Caricaci dentro tutti i file di questo progetto (scarica lo ZIP da GitHub, estrailo sul PC e trascina il contenuto).
+3. Dentro `gymbro` crea due cartelle vuote: `data` e `backups`. **Vanno create a mano**: su Synology, Docker non crea da solo le cartelle montate e senza di esse il container non parte.
+4. Sul PC copia `.env.example` in un file chiamato `.env`, imposta almeno `GYMBRO_PASSWORD` e carica il file nella cartella `gymbro`.
+
+Il percorso completo della cartella è di solito `/volume1/docker/gymbro`.
+
+### 3. Crea il progetto
+
+1. Apri **Container Manager** → **Progetto** (Project) → **Crea** (Create).
+2. **Nome progetto**: `gymbro`.
+3. **Percorso**: scegli `/docker/gymbro`.
+4. **Origine**: Container Manager trova il `docker-compose.yml` già presente e propone di usarlo; conferma.
+5. Vai avanti fino alla fine lasciando disattivato il portale Web e conferma. La prima build scarica Node e le dipendenze: può richiedere diversi minuti.
+
+Quando il progetto è in esecuzione (pallino verde), apri `http://IP-DEL-NAS:8080`.
+
+**Se preferisci il terminale**, o se la creazione guidata dà errore: attiva SSH da **Pannello di controllo** → **Terminale e SNMP** (Terminal & SNMP) → **Abilita servizio SSH**, collegati e lancia:
+
+```bash
+cd /volume1/docker/gymbro
+```
+
+```bash
+sudo docker compose up -d --build
+```
+
+Il progetto avviato così compare comunque in Container Manager.
 
 ## HTTPS: perché serve e come ottenerlo
 
-I browser permettono installazione come app, uso offline, schermo sempre acceso e notifiche solo su una connessione sicura (HTTPS) o su `localhost`. Su `http://IP-DEL-NAS:8080` l'app si usa, ma solo online e senza queste funzioni. Due strade:
+I browser permettono installazione come app, uso offline, schermo sempre acceso e notifiche solo su una connessione sicura (HTTPS) o su `localhost`. Su `http://IP-DEL-NAS:8080` l'app si usa, ma solo online e senza queste funzioni.
 
-**Reverse proxy del NAS con certificato.** Synology e QNAP hanno un reverse proxy integrato e la gestione dei certificati Let's Encrypt. Crea una regola che inoltra `https://gymbro.tuodominio` verso `http://localhost:8080` e assegna il certificato a quel nome. Serve un nome di dominio che punti al NAS (va bene anche il DDNS del produttore). Se esponi il NAS a internet, scegli una password robusta: è l'unica protezione dell'app.
+### Con il DDNS e il proxy inverso di Synology
 
-**Tailscale.** Installa Tailscale sul NAS e sul telefono, poi sul NAS:
+1. **Nome del NAS.** **Pannello di controllo** → **Accesso esterno** (External Access) → **DDNS** → **Aggiungi**. Scegli il provider **Synology** e un nome, per esempio `miopalestra.synology.me`. Accetta la proposta di ottenere un certificato Let's Encrypt e di impostarlo come predefinito.
+2. **Regola del proxy inverso.** **Pannello di controllo** → **Portale di accesso** (Login Portal) → **Avanzate** (Advanced) → **Proxy inverso** (Reverse Proxy) → **Crea**:
+
+   | Campo | Valore |
+   |---|---|
+   | Origine · Protocollo | HTTPS |
+   | Origine · Nome host | `miopalestra.synology.me` |
+   | Origine · Porta | `8443` |
+   | Destinazione · Protocollo | HTTP |
+   | Destinazione · Nome host | `localhost` |
+   | Destinazione · Porta | `8080` |
+
+3. **Certificato.** **Pannello di controllo** → **Sicurezza** (Security) → **Certificato** (Certificate) → **Impostazioni** (Settings): controlla che alla riga della regola appena creata sia assegnato il certificato di `miopalestra.synology.me`.
+4. **Router.** Per usare l'app fuori casa, inoltra la porta `8443` del router verso la porta `8443` del NAS.
+
+L'indirizzo dell'app diventa `https://miopalestra.synology.me:8443`. Usalo sempre, anche in casa: è quello su cui installare l'app. Se da casa non si apre, il router non gestisce gli indirizzi pubblici dall'interno della rete (NAT loopback): in quel caso vedi Tailscale qui sotto.
+
+Con la porta aperta su internet la password è l'unica protezione dell'app: sceglila lunga. GymBro blocca l'accesso per un quarto d'ora dopo cinque tentativi sbagliati.
+
+### Con Tailscale
+
+Alternativa senza porte aperte: installa **Tailscale** dal **Centro pacchetti** e sul telefono, poi da SSH sul NAS:
 
 ```bash
-tailscale serve --bg 8080
+sudo tailscale serve --bg 8080
 ```
 
-Ottieni un indirizzo `https://nome-nas.tuo-tailnet.ts.net` con certificato valido, raggiungibile solo dai tuoi dispositivi, anche fuori casa e senza aprire porte sul router.
+Ottieni un indirizzo `https://nome-nas.tuo-tailnet.ts.net` raggiungibile solo dai tuoi dispositivi, anche fuori casa. Questo comando non è stato provato su Synology: se il pacchetto del NAS non lo supporta, segui la guida di Tailscale per Synology.
 
 In entrambi i casi GymBro riceve l'intestazione `X-Forwarded-Proto` e imposta da solo il cookie di sessione come sicuro.
 
@@ -110,6 +150,8 @@ Dopo una modifica al file `.env`:
 docker compose up -d
 ```
 
+Sul Synology: **Container Manager** → **Progetto** → `gymbro` → **Azione** → **Arresta**, poi **Avvia**; se la modifica non viene letta, usa **Compila** (Build).
+
 ## Dove stanno i dati
 
 Tutto ciò che conta è nella cartella `GYMBRO_DATA`:
@@ -132,7 +174,10 @@ Ogni telefono tiene inoltre una copia locale dei dati per funzionare offline; la
 
 Da **Altro → Dati e backup** vedi le copie presenti e puoi farne una subito con "Esegui ora". Se il container era spento all'ora prevista, il backup parte al primo avvio successivo della giornata.
 
-Tieni `GYMBRO_BACKUPS` su un disco diverso da quello dei dati, oppure includi quella cartella nel backup del NAS verso un altro dispositivo: una copia sullo stesso disco non protegge da un guasto del disco.
+Una copia sullo stesso disco non protegge da un guasto del disco. Su Synology hai due modi per metterla al sicuro:
+
+- se il NAS ha un secondo volume, crea lì una cartella e indicala in `.env`, per esempio `GYMBRO_BACKUPS=/volume2/backup/gymbro`;
+- oppure crea in **Hyper Backup** un'attività che copia `docker/gymbro/backups` su un disco USB, un altro NAS o dove preferisci.
 
 **Manuale.** Il backup è anche la copia della cartella dei dati. Per una copia sicura ferma prima il container:
 
@@ -215,6 +260,8 @@ In **Altro → Promemoria** attivi una notifica nei giorni di allenamento previs
 
 ## Aggiornare GymBro
 
+Sul PC, o sul NAS se hai clonato il repository con git:
+
 ```bash
 git pull
 ```
@@ -222,6 +269,8 @@ git pull
 ```bash
 docker compose up -d --build
 ```
+
+Sul Synology senza git: scarica il nuovo ZIP da GitHub e sovrascrivi i file in `docker/gymbro` da File Station, **senza toccare** `.env`, `data` e `backups`. Poi in **Container Manager** → **Progetto** → `gymbro` → **Azione** → **Compila** (Build), oppure da SSH `sudo docker compose up -d --build` nella cartella del progetto.
 
 I dati non vengono toccati: le nuove tabelle e colonne si aggiungono da sole all'avvio. Sul telefono l'app si aggiorna da sola alla riapertura successiva.
 
@@ -250,5 +299,6 @@ Il server gira sulla porta 8080 e l'interfaccia, con ricaricamento automatico, s
 - **"Server non raggiungibile" in Sincronizzazione**: il telefono non vede il NAS. I dati restano sul dispositivo e partono al ritorno della connessione.
 - **Lo schermo si spegne durante la sessione**: lo schermo acceso richiede HTTPS; su alcuni telefoni il risparmio energetico lo impedisce comunque.
 - **Il timer non suona a telefono bloccato**: i browser sospendono le pagine in secondo piano; l'avviso scatta appena riapri l'app.
+- **Il container non parte sul Synology con un errore sulle cartelle montate**: mancano le cartelle `data` o `backups`; creale da File Station.
 - **Il backup fallisce**: controlla che la cartella `GYMBRO_BACKUPS` esista e sia scrivibile; l'errore compare in **Dati e backup** e nei log (`docker compose logs gymbro`).
 - **Password dimenticata**: cambiala in `.env` e riavvia con `docker compose up -d`.
