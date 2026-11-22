@@ -21,7 +21,8 @@ Un solo utente, un solo container, nessun servizio cloud: database e foto stanno
 11. [Promemoria](#promemoria)
 12. [Aggiornare GymBro](#aggiornare-gymbro)
 13. [Sviluppo](#sviluppo)
-14. [Problemi comuni](#problemi-comuni)
+14. [Test](#test)
+15. [Problemi comuni](#problemi-comuni)
 
 ## Avvio rapido sul PC
 
@@ -291,6 +292,30 @@ Il server gira sulla porta 8080 e l'interfaccia, con ricaricamento automatico, s
 | `shared/` | Schema dei dati, condiviso tra server e interfaccia. |
 | `server/` | API, sincronizzazione, backup, promemoria, coach. |
 | `web/` | Interfaccia React e service worker. |
+
+## Test
+
+```bash
+npm test
+```
+
+```bash
+npm run test:e2e
+```
+
+```bash
+npm run test:docker
+```
+
+| Comando | Cosa verifica | Durata |
+|---|---|---|
+| `npm test` | Calcoli (record, progressione, cicli, dischi, massimale), sincronizzazione offline tra telefono e server, database, esportazione, backup, promemoria e tutte le API, compreso il coach con un finto servizio Anthropic | pochi secondi |
+| `npm run test:e2e` | L'app compilata in un browser che simula un telefono: accesso, uso offline, libreria, schede, sessione completa senza rete, storico, record, cardio, corpo, strumenti, dati, coach, promemoria | circa un minuto |
+| `npm run test:docker` | Build e avvio con `docker compose`, accesso, dati che restano dopo un riavvio, backup nella cartella montata | qualche minuto |
+
+`npm run test:all` esegue in fila controllo dei tipi, test unitari e test nel browser. Su GitHub gli stessi test partono da soli a ogni modifica: l'esito si vede nella scheda **Actions** e su ogni pull request.
+
+Restano da provare a mano, su un telefono vero: suono e vibrazione del timer, schermo sempre acceso, arrivo delle notifiche e il coach con una chiave Anthropic reale.
 
 ## Problemi comuni
 

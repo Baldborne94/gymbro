@@ -89,12 +89,12 @@ export function cycleInfo(r: Pick<Routine, 'start_date' | 'weeks' | 'status'>, t
 }
 
 export function cycleMessage(c: Cycle): string | null {
+  // daysLeft conta anche oggi: 1 significa che oggi è l'ultimo giorno del ciclo.
   if (c.state === 'conclusa') {
-    const over = -c.daysLeft;
-    return over === 0
-      ? 'Il ciclo finisce oggi: è ora di cambiare scheda.'
-      : `Ciclo concluso da ${over} ${over === 1 ? 'giorno' : 'giorni'}: è ora di cambiare scheda.`;
+    const over = 1 - c.daysLeft;
+    return `Ciclo concluso da ${over} ${over === 1 ? 'giorno' : 'giorni'}: è ora di cambiare scheda.`;
   }
+  if (c.daysLeft === 1) return 'Il ciclo finisce oggi: prepara la prossima scheda.';
   if (c.state === 'ultima_settimana') return 'Ultima settimana del ciclo: prepara la prossima scheda.';
   return null;
 }

@@ -152,7 +152,13 @@ export const importRows = (tables: Record<string, unknown>) => transaction(() =>
     if (!Array.isArray(rows)) continue;
     counts[table] = 0;
     for (const row of rows) {
-      if (upsert(table, { ...(row as Record<string, unknown>), updated_at: now, deleted: false })) counts[table]++;
+      const r = row as Record<string, unknown>;
+      // Più recente di ciò che c'è, anche se un dispositivo aveva l'orologio avanti.
+      const existing = typeof r.id === 'string'
+        ? (db.prepare(`SELECT updated_at FROM ${table} WHERE id = ?`).get(r.id) as { updated_at: number } | undefined)
+        : undefined;
+      const updatedAt = Math.max(now, (existing?.updated_at ?? 0) + 1);
+      if (upsert(table, { ...r, updated_at: updatedAt, deleted: false })) counts[table]++;
     }
   }
   return counts;

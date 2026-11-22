@@ -1,0 +1,4 @@
+# Usato solo dal test del container: nome, porta e cartelle separati da quelli reali.
+services:
+  gymbro:
+    container_name: gymbro-smoke
