@@ -1,7 +1,9 @@
 name: Test
 
+# Su main a ogni push, sugli altri rami tramite la pull request (una sola esecuzione per modifica).
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
