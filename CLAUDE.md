@@ -14,7 +14,7 @@ Se cambiano `Dockerfile`, `docker-compose.yml` o l'avvio del server, anche `npm 
 In un ambiente con proxy di rete (sessioni cloud) la build di compose non scarica nulla: costruisci prima
 l'immagine con `docker build --network host -t gymbro .` e poi lancia `SKIP_BUILD=1 npm run test:docker`.
 
-Su GitHub il workflow `.github/workflows/test.yml` ripete tutto a ogni push e pull request:
+Su GitHub il workflow `.github/workflows/test.yml` ripete tutto su ogni pull request e a ogni push su `main`:
 dopo il push controlla l'esito e sistema ciò che fallisce.
 
 ## Regole
