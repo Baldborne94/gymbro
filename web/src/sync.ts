@@ -81,7 +81,7 @@ async function runSync() {
       // Dal server: vince la modifica più recente.
       for (const remote of (data.changes[name] ?? []) as unknown as AnyRow[]) {
         const local = await t.get(remote.id);
-        if (local && local._dirty === 1 && local.updated_at > remote.updated_at) continue;
+        // Una modifica locale più recente (anche se fatta durante questo invio) non va sovrascritta.
         if (local && local.updated_at > remote.updated_at) continue;
         await t.put({ ...remote, _dirty: 0 });
       }

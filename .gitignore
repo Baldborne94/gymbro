@@ -4,3 +4,6 @@ data
 backups
 .env
 *.log
+.e2e
+test-results
+playwright-report

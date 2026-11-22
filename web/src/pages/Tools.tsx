@@ -3,22 +3,10 @@ import { Page } from '../components/Layout';
 import { Stepper } from '../components/Stepper';
 import { num } from '../dates';
 import { setSetting, useSetting } from '../settings';
+import { estimateMax, loadForReps, platesPerSide } from '../tools';
 
 const ALL_PLATES = [25, 20, 15, 10, 5, 2.5, 1.25, 0.5];
 const BARS = [20, 15, 10, 7.5];
-
-/** Dischi per lato, dal più pesante, per avvicinarsi il più possibile al peso richiesto. */
-export function platesPerSide(target: number, bar: number, plates: number[]): { side: number[]; total: number } {
-  let rest = Math.max(0, (target - bar) / 2);
-  const side: number[] = [];
-  for (const p of [...plates].sort((a, b) => b - a)) {
-    while (rest >= p - 1e-9) {
-      side.push(p);
-      rest = Math.round((rest - p) * 1000) / 1000;
-    }
-  }
-  return { side, total: bar + 2 * side.reduce((a, b) => a + b, 0) };
-}
 
 function PlateCalculator() {
   const [target, setTarget] = useState<number | null>(100);
@@ -84,11 +72,9 @@ function MaxCalculator() {
   const [reps, setReps] = useState<number | null>(8);
   const w = load ?? 0;
   const r = reps ?? 0;
-  const epley = r <= 1 ? w : w * (1 + r / 30);
-  const brzycki = r <= 1 ? w : r < 37 ? (w * 36) / (37 - r) : 0;
-  const max = brzycki ? (epley + brzycki) / 2 : epley;
+  const { max, epley, brzycki } = estimateMax(w, r);
   const round = (v: number) => Math.round(v / 2.5) * 2.5;
-  const table = [1, 2, 3, 4, 5, 6, 8, 10, 12].map((n) => ({ n, kg: n === 1 ? max : max / (1 + n / 30) }));
+  const table = [1, 2, 3, 4, 5, 6, 8, 10, 12].map((n) => ({ n, kg: loadForReps(max, n) }));
 
   return (
     <div className="card">

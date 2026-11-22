@@ -25,7 +25,11 @@ export function Stepper({ label, value, onChange, step = 1, min = 0, max = 9999,
 
   const clamp = (v: number) => Math.min(max, Math.max(min, Math.round(v * 100) / 100));
   const bump = (dir: 1 | -1) => {
-    if (value === null) return onChange(clamp(dir === 1 ? Math.max(step, min) : min));
+    if (value === null) {
+      // Valori con segno (zavorra/assistenza): da vuoto si parte da zero, non dal minimo.
+      if (min < 0) return onChange(clamp(dir * step));
+      return onChange(clamp(dir === 1 ? Math.max(step, min) : min));
+    }
     const next = clamp(value + dir * step);
     onChange(nullable && dir === -1 && value === min ? null : next);
   };

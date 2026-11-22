@@ -27,7 +27,8 @@ export function listBackups() {
       const st = fs.statSync(path.join(DB_DIR, name));
       return { name, size: st.size, created_at: st.mtimeMs };
     })
-    .sort((a, b) => b.name.localeCompare(a.name));
+    // Il nome contiene data e ora, quindi l'ordine alfabetico è anche quello cronologico.
+    .sort((a, b) => (a.name < b.name ? 1 : a.name > b.name ? -1 : 0));
 }
 
 /**
@@ -38,7 +39,12 @@ export async function runBackup(): Promise<{ name: string; photos: number }> {
   try {
     fs.mkdirSync(DB_DIR, { recursive: true });
     fs.mkdirSync(PHOTO_COPY, { recursive: true });
-    const name = `gymbro-${stamp()}.db`;
+    // Due backup nello stesso secondo non si sovrascrivono: i successivi ricevono un suffisso
+    // crescente a tre cifre, così l'ordine alfabetico resta quello cronologico.
+    const base = `gymbro-${stamp()}`;
+    const taken = fs.readdirSync(DB_DIR).filter((f) => f.startsWith(base));
+    const last = Math.max(0, ...taken.map((f) => (f === `${base}.db` ? 1 : Number(f.slice(base.length + 1, -3)) || 0)));
+    const name = last === 0 ? `${base}.db` : `${base}_${String(last + 1).padStart(3, '0')}.db`;
     await sqliteBackup(db, path.join(DB_DIR, name));
     let photos = 0;
     for (const file of fs.readdirSync(PHOTOS_DIR)) {
